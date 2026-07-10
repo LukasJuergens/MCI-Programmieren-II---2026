@@ -20,9 +20,13 @@ class inputDataProcessor:
         # Platzhalter
         self.distances = None
         self.totalDistance = None
+        self.inclines = None
         self.seconds = None
         self.speeds = None
         self.accelerations = None
+        self.forces = None
+        self.torques = None
+        self.powers = None
 
     def process(self) -> None:
         pass
@@ -83,20 +87,49 @@ class inputDataProcessor:
         """
         Berechnet die benötigte Kraft um das Ebike anzutreiben
         """
+        if self.inclines is None or self.speeds is None or self.accelerations is None:
+            raise ValueError("Execute calcIncline(), calcSpeed() and calcAcceleration() first!")
+        
         g = 9.81
         Fg = m * g
         Fha = Fg / np.sin(self.inclines)
 
         # Luftdichte berechnen
-        ele = self.ele * units("m")
-        temp = self.temp*units("degC")
+        ele = self.ele.to_numpy() * units["m"]
+        temp = self.temp.to_numpy() * units["degC"]
         pressure = mpcalc.height_to_pressure_std(ele)
-        rho = mpcalc.density(pressure, temperature, mixing_ratio=0*units.unitless)
+        rho = mpcalc.density(pressure, temp, mixing_ratio=0)
 
         Fd = 0.5 * rho * cwA * self.speeds**2
         Facc = m * self.accelerations
-        self.Forces = Fd - Facc
+        self.forces = Fd - Facc
         
+    def calcTorque(self, r: float) -> None:
+        """
+        Berechnet das Drehmoment, welches der Motor aufbringen muss
+        """
+        if self.forces is None:
+            raise ValueError("Execute calcForce() first!")
+        
+        self.torques = r * self.forces
+
+    def calcCurrent(self, Km: float) -> None:
+        """
+        Berechnet den Motorstrom
+        """
+        if self.torques is None:
+            raise ValueError("Execute calcTorque() first!")
+
+        self.currents = self.torques / Km
+
+    def calcPower(self) -> None:
+        """
+        Berechnet die Leistung, welche der Motor aufbringen muss
+        """
+        if self.speeds is None or self.forces is None:
+            raise ValueError("Execute calcSpeed() and calcForce() first!")
+        
+        self.powers = self.forces * self.speeds
 
 
 if __name__ == "__main__":
@@ -125,7 +158,7 @@ if __name__ == "__main__":
     printData("Inclines", data_input.inclines, "rad")    
 
     data_input.calcTimeDiff()
-    printData("Time", data_input.seconds, "s")    
+    printData("Seconds", data_input.seconds, "s")    
     
     data_input.calcSpeed()
     printData("Speeds", data_input.speeds, "m/s")
@@ -134,4 +167,13 @@ if __name__ == "__main__":
     printData("Accelerations", data_input.accelerations, "m/s^2")    
 
     data_input.calcForce(m, cwA)
-    printData("Forces", data_input.Forces, "N")
+    printData("Forces", data_input.forces, "N")
+
+    data_input.calcTorque(r)
+    printData("Torques", data_input.torques, "Nm")
+
+    data_input.calcCurrent(Km)
+    printData("Currents", data_input.currents, "A")
+
+    data_input.calcPower()
+    printData("Powers", data_input.powers, "W")
