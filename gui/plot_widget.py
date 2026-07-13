@@ -18,4 +18,8 @@ class PlotWidget(QWidget):
 
         axes = self.figure.add_subplot(111)
         axes.plot(y_values)
+        axes.set_ylabel(y_label)
+        axes.grid(True)
+        if x_values == None:
+            axes.set_xticks([])
         self.canvas.draw()
