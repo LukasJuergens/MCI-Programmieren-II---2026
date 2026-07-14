@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt
 from gui.map_widget import MapWidget
 from gui.plot_widget import PlotWidget
 from gui.address_widget import AddressWidget
+from gui.battery_selection_widget import BatterySelectionWidget
 from inputDataProcessor import inputDataProcessor
 from Battery_Pack import BatteryPack
 
@@ -38,9 +39,9 @@ class MainWindow(QMainWindow):
         self.min_lon = None
         self.max_lon = None
 
-        self.akku_combobox = QComboBox()
-        self.akku_combobox.addItems(["LiPo", "NMC"])
-        self.akku_combobox.currentTextChanged.connect(self.update_battery)
+        self.battery_selection_widget = BatterySelectionWidget()
+        self.battery_selection_widget.battery_combobox.currentTextChanged.connect(self.update_battery)
+        self.battery_selection_widget.apply_button.clicked.connect(self.update_battery)
 
         self.get_data()
 
@@ -68,7 +69,7 @@ class MainWindow(QMainWindow):
 
         self.update_driven_time()
 
-        layout.addWidget(self.akku_combobox)
+        layout.addWidget(self.battery_selection_widget)
         layout.addWidget(self.address_widget)
         layout.addWidget(self.time_display)
         layout.addWidget(self.map_widget)
@@ -107,7 +108,14 @@ class MainWindow(QMainWindow):
 
 
     def update_battery(self):
-        min_battery_capacity, start_capacity = BatteryPack.calculate_min_capacity_Ah(self.inputDataProcessor.currents)
+        cell_capacity = self.battery_selection_widget.cell_capacity_lineedit.text()
+        try:
+            cell_capacity = float(cell_capacity)
+            if(cell_capacity <= 0):
+                cell_capacity = 5
+        except:
+            cell_capacity = 5
+        min_battery_capacity, start_capacity = BatteryPack.calculate_min_capacity_Ah(self.inputDataProcessor.currents, cell_capacity)
         batteries = {"LiPo": {0.00: 32.00, 
                                   0.04: 35.87,
                                   0.09: 36.85,
@@ -138,7 +146,7 @@ class MainWindow(QMainWindow):
                                   0.88:	41.08,
                                   1.00:	42.00
                         }}
-        self.battery_pack = BatteryPack(min_battery_capacity+0.05, batteries[self.akku_combobox.currentText()], 8, start_capacity/min_battery_capacity, 32, 42)
+        self.battery_pack = BatteryPack(min_battery_capacity, batteries[self.battery_selection_widget.battery_combobox.currentText()], 8, start_capacity/min_battery_capacity+0.001, 32, 42)
         self.voltages = []
         self.socs = []
 
@@ -150,6 +158,10 @@ class MainWindow(QMainWindow):
             self.update_plot()
         except: 
             pass
+
+        self.battery_selection_widget.applied_cell_capacity_label.setText(f"Zellkapazität verwendet in Berechnung: {cell_capacity}Ah")
+        self.battery_selection_widget.minimum_required_cells_label.setText(f"Minimale Anzahl der Zellen in parallel: {round(min_battery_capacity/cell_capacity)}({min_battery_capacity}Ah)")
+        self.battery_selection_widget.minimum_start_soc_label.setText(f"Minimaler State of Charge am anfang: {round(start_capacity/min_battery_capacity, 2)}({round(start_capacity, 2)}Ah)")
 
     
 

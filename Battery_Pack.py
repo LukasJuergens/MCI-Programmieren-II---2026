@@ -61,9 +61,9 @@ class BatteryPack:
         if duration < 0:
             raise ValueError("Zeitdauer muss positiv sein")
         self.soc += current*duration/self.capacity_nom_Ah
-        if self.soc > 1:
+        if self.is_full():
             self.soc=1
-        if self.soc < 0:
+        elif self.is_empty():
             self.soc=0
             raise ValueError("Akkustand darf nicht unter 0% fallen.")
 
@@ -100,6 +100,8 @@ class BatteryPack:
     def __str__(self):
         return f"BatteryPack(SoC={self.soc * 100:.1f}%, V={self.voltage():.2f} V)"
     
+
+
     @staticmethod
     def calculate_min_capacity_Ah(currents, cell_capacity=5):
         time_defferences = currents.index.to_series().diff().dt.total_seconds().fillna(1)
