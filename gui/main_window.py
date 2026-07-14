@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QSlider, QLabel, QComboBox
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QSlider, QLabel, QComboBox
 from PySide6.QtCore import Qt
 
 from gui.map_widget import MapWidget
@@ -39,6 +39,25 @@ class MainWindow(QMainWindow):
         self.min_lon = None
         self.max_lon = None
 
+
+        self.bike_type_label = QLabel("Fahrrad:")
+
+        self.bike_type = QComboBox()
+        self.bike_type.addItems(["mountainbike", "racebike", "gravelbike"])
+        self.bike_type.currentTextChanged.connect(self.get_data) 
+
+        self.road_surface_label = QLabel("Straßenoberfläche:")
+        self.road_surface = QComboBox()
+        self.road_surface.addItems(["asphalt", "gravel"])   
+        self.road_surface.currentTextChanged.connect(self.get_data)
+        
+        environmentLayout = QHBoxLayout()
+        environmentLayout.addWidget(self.bike_type_label)
+        environmentLayout.addWidget(self.bike_type)
+        environmentLayout.addWidget(self.road_surface_label)
+        environmentLayout.addWidget(self.road_surface)
+        
+
         self.battery_selection_widget = BatterySelectionWidget()
         self.battery_selection_widget.battery_combobox.currentTextChanged.connect(self.update_battery)
         self.battery_selection_widget.apply_button.clicked.connect(self.update_battery)
@@ -68,7 +87,7 @@ class MainWindow(QMainWindow):
         self.plot_widget.plot_data(self.elevation)
 
         self.update_driven_time()
-
+        layout.addLayout(environmentLayout)
         layout.addWidget(self.battery_selection_widget)
         layout.addWidget(self.address_widget)
         layout.addWidget(self.time_display)
@@ -76,6 +95,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.time_slider)
         layout.addWidget(self.plot_selection_combobox)
         layout.addWidget(self.plot_widget)
+
+              
 
         centralWidget.setLayout(layout)
         self.setCentralWidget(centralWidget)
@@ -86,7 +107,7 @@ class MainWindow(QMainWindow):
     
     def get_data(self):
         self.inputDataProcessor = inputDataProcessor()
-        self.inputDataProcessor.process(80, 0.5625, 0.6858, 1.5, 200)
+        self.inputDataProcessor.process(80, 0.5625, 0.6858, 1.5, 200, inputDataProcessor.EnvironmentToFrictionCoefficient(self.bike_type.currentText(), self.road_surface.currentText()))
         self.lat = self.inputDataProcessor.lat.values
         self.lon = self.inputDataProcessor.lon.values
         self.elevation = self.inputDataProcessor.ele.values

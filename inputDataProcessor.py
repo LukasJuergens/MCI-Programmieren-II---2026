@@ -3,6 +3,7 @@ import numpy as np
 import metpy.calc as mpcalc
 from metpy.units import units
 from scipy.signal import savgol_filter
+from typing import Literal
 
 class inputDataProcessor:
     def __init__ (self) -> None:
@@ -26,7 +27,8 @@ class inputDataProcessor:
         data['ele'] = savgol_filter(data['ele'], window_length=windowLength, polyorder=order)
 
         # Daten auftrennen
-        self.time = data.index 
+        self.time = data.index
+        self.timeSinceStart = 0
         self.lat = data['lat']
         self.lon = data['lon']
         self.ele = data['ele']
@@ -44,9 +46,10 @@ class inputDataProcessor:
         self.forces = None
         self.torques = None
         self.powers = None
-        self.powerMax = None           
+        self.powerMax = None
+        self.currents = None
 
-    def process(self, m:float, cwA:float, d:float, Km:float, PrekMax:float) -> None:
+    def process(self, m:float=80, cwA:float=0.5625, d:float=27*0.0254, Km:float=1.5, PrekMax:float=200, cr:float = 0.005) -> None:
         """
         Berechnet folgende Werte zwischen den Messpunkten
         - Distanz
@@ -68,14 +71,16 @@ class inputDataProcessor:
         - m: Masse von Fahrer und Fahrrad in kg
         - cwA: das Produkt aus Windangriffsfläche A und dem Strömungskoeffizienten c_w in m^2
         - d: Raddurchmesser in m
-        - Km Motorkonstante in Nm/A
-        - Maximale Rekuperationsleistung
+        - Km: Motorkonstante in Nm/A
+        - PrekMax: Maximale Rekuperationsleistung
+        - cr: Reibungskoeffizient
         """
+        
         self._calcDistance()
         self._calcIncline()
         self._calcSpeed()
         self._calcAcceleration()
-        self._calcForce(m, cwA, PrekMax)
+        self._calcForce(m, cwA, PrekMax, cr)
         self._calcTorque(d/2)
         self._calcCurrent(Km)
         self._calcPower()
@@ -132,7 +137,26 @@ class inputDataProcessor:
         # a = dv/dt
         self.accelerations = (dv/1)#.dropna()
 
-    def _calcForce(self, m: float, cwA: float, PrekMax: float) -> None:
+    @staticmethod
+    def EnvironmentToFrictionCoefficient(
+        bikeType:Literal["mountainbike", "racebike", "gravelbike"], 
+        roadSurface:Literal["asphalt", "gravel"]) -> float:
+
+        match (bikeType.lower(), roadSurface.lower()):
+            case ("racebike", "asphalt"): cr = 0.0035
+            case ("racebike", "gravel"):  cr = 0.01
+            
+            case ("gravelbike", "asphalt"): cr = 0.005
+            case ("gravelbike", "gravel"):  cr = 0.0075
+            
+            case ("mountainbike", "asphalt"): cr = 0.014
+            case ("mountainbike", "gravel"):  cr = 0.018
+            
+            case _: cr = 0.005
+
+        return cr
+ 
+    def _calcForce(self, m:float, cwA: float, PrekMax: float, cr: float) -> None:
         """
         Berechnet die benötigte Kraft um das Ebike anzutreiben
         """
@@ -142,6 +166,8 @@ class inputDataProcessor:
         g = 9.81
         Fg = m * g
         Fha = Fg * np.sin(self.inclines)
+        Fn = Fg * np.cos(self.inclines)
+        Fr = Fn * cr
 
         # Luftdichte berechnen
         ele = self.ele.to_numpy() * units["m"]
@@ -151,7 +177,7 @@ class inputDataProcessor:
 
         Fd = 0.5 * rho * cwA * self.speeds**2
         Facc = m * self.accelerations
-        self.forces = Facc + Fd + Fha
+        self.forces = Facc + Fd + Fha + Fr
         # Maximale Rekuperation einstellen:
         # P = F * v    --> F = P/v
         # speeds wird geclipt, damit keine division durch 0 entstehen kann
@@ -217,4 +243,4 @@ if __name__ == "__main__":
     printData("Torques", dataProcessor.torques, "Nm")
     printData("Currents", dataProcessor.currents, "A")
     printData("Powers", dataProcessor.powers, "W")
-    
+

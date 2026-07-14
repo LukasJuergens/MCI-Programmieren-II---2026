@@ -16,7 +16,6 @@ class BatterySelectionWidget(QWidget):
         self.minimum_required_cells_label = QLabel("Minimale Anzahl der Zellen in parallel: 6(30Ah)")
         self.minimum_start_soc_label = QLabel("Minimaler State of Charge am anfang: 1.0(30Ah)")
 
-
         input_layout = QHBoxLayout()
         input_layout.addWidget(battery_type_label)
         input_layout.addWidget(self.battery_combobox)
