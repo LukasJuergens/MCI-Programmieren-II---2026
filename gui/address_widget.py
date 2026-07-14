@@ -26,8 +26,11 @@ class AddressWidget(QWidget):
     def update_address(self, coordinates):
         self.coordinates = coordinates
 
-        geolocator = Nominatim(user_agent="akku-simulator")
-        self.location = geolocator.reverse(self.coordinates)
+        try:
+            geolocator = Nominatim(user_agent="akku-simulator")
+            self.location = geolocator.reverse(self.coordinates)
+        except:
+            pass
         try:
             self.street_label.setText(f"{self.location.raw["address"]["road"]} {self.location.raw["address"].get("house_number") if self.location.raw["address"].get("house_number") else ""}")
         except:
@@ -41,7 +44,7 @@ class AddressWidget(QWidget):
             try:
                 self.town_label.setText(f"{self.location.raw["address"]["postcode"]} {self.location.raw["address"]["village"]}")
             except:
-                self.street_label.setText()
+                self.street_label.setText("")
         try:
             self.state_label.setText(f"{self.location.raw["address"]["state"]}")
         except:
