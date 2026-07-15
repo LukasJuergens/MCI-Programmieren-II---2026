@@ -8,6 +8,7 @@ class PlotWidget(QWidget):
 
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
+        self.canvas.setMinimumHeight(250)
 
         layout = QVBoxLayout()
         layout.addWidget(self.canvas)
@@ -17,9 +18,14 @@ class PlotWidget(QWidget):
         self.figure.clear()
 
         axes = self.figure.add_subplot(111)
-        axes.plot(y_values)
         axes.set_ylabel(y_label)
         axes.grid(True)
         if x_values == None:
+            axes.plot(y_values)
             axes.set_xticks([])
+        else:
+            axes.plot( x_values, y_values)
+            axes.set_xlabel(x_label)
+        self.figure.tight_layout()
+        self.figure.subplots_adjust(bottom=0.2)
         self.canvas.draw()

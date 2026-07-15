@@ -167,7 +167,8 @@ class MainWindow(QMainWindow):
                                   0.88:	41.08,
                                   1.00:	42.00
                         }}
-        self.battery_pack = BatteryPack(min_battery_capacity, batteries[self.battery_selection_widget.battery_combobox.currentText()], 8, start_capacity/min_battery_capacity+0.001, 32, 42)
+        battery_resistance = {"LiPo": 8, "NMC": 7}
+        self.battery_pack = BatteryPack(min_battery_capacity, batteries[self.battery_selection_widget.battery_combobox.currentText()], battery_resistance[self.battery_selection_widget.battery_combobox.currentText()], start_capacity/min_battery_capacity+0.001, 32, 42)
         self.voltages = []
         self.socs = []
 
@@ -197,4 +198,4 @@ class MainWindow(QMainWindow):
     def update_plot(self):
         data_to_plot = {"Höhe": self.elevation, "Geschwindigkeit": self.speeds, "Beschleunigung": self.accelerations, "Leistung": self.powers, "Steigung": self.inclines, "Drehmoment": self.torques, "Motorstrom": self.currents, "Ladezustand Akku": self.socs, "Akkuspannung": self.voltages}
         y_labels = {"Höhe": "Höhe / m", "Geschwindigkeit": "Geschwindigkeit / m/s", "Beschleunigung": "Beschleunigung / m/s²", "Leistung": "Leistung / W", "Steigung": "Steigung / rad", "Drehmoment": "Drehmoment / Nm", "Motorstrom": "Motorstrom / A", "Ladezustand Akku": "Ladezustand / Ah/Ah", "Akkuspannung": "Akkuspannung / V"}
-        self.plot_widget.plot_data(data_to_plot[self.plot_selection_combobox.currentText()][:self.time_slider.value()], y_label=y_labels[self.plot_selection_combobox.currentText()])
+        self.plot_widget.plot_data(data_to_plot[self.plot_selection_combobox.currentText()][:self.time_slider.value()], [i/60.0 for i in range(self.time_slider.value())], y_label=y_labels[self.plot_selection_combobox.currentText()], x_label="Zeit / min")
