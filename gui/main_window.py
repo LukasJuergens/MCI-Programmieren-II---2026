@@ -5,6 +5,8 @@ from gui.map_widget import MapWidget
 from gui.plot_widget import PlotWidget
 from gui.address_widget import AddressWidget
 from gui.battery_selection_widget import BatterySelectionWidget
+from gui.general_data_widget import GeneralDataWidget
+
 from inputDataProcessor import inputDataProcessor
 from Battery_Pack import BatteryPack
 
@@ -39,6 +41,12 @@ class MainWindow(QMainWindow):
         self.min_lon = None
         self.max_lon = None
 
+        self.time_total = None
+        self.distance_total = None
+        self.speed_mean = None
+        self.power_max = None
+        self.elevation_up = None
+        self.elevation_down = None
 
         self.bike_type_label = QLabel("Fahrrad:")
 
@@ -56,6 +64,8 @@ class MainWindow(QMainWindow):
         environmentLayout.addWidget(self.bike_type)
         environmentLayout.addWidget(self.road_surface_label)
         environmentLayout.addWidget(self.road_surface)
+
+        self.general_data_widget = GeneralDataWidget()
         
 
         self.battery_selection_widget = BatterySelectionWidget()
@@ -63,6 +73,8 @@ class MainWindow(QMainWindow):
         self.battery_selection_widget.apply_button.clicked.connect(self.update_battery)
 
         self.get_data()
+
+        general_data_layout = QHBoxLayout()
 
         layout = QVBoxLayout()
         centralWidget = QWidget()
@@ -86,10 +98,13 @@ class MainWindow(QMainWindow):
         self.plot_widget = PlotWidget()
         self.plot_widget.plot_data(self.elevation)
 
+        general_data_layout.addWidget(self.address_widget)
+        general_data_layout.addWidget(self.general_data_widget)
+
         self.update_driven_time()
         layout.addLayout(environmentLayout)
         layout.addWidget(self.battery_selection_widget)
-        layout.addWidget(self.address_widget)
+        layout.addLayout(general_data_layout)
         layout.addWidget(self.time_display)
         layout.addWidget(self.map_widget)
         layout.addWidget(self.time_slider)
@@ -100,11 +115,15 @@ class MainWindow(QMainWindow):
 
         centralWidget.setLayout(layout)
         self.setCentralWidget(centralWidget)
+
+
     
     def init_UI(self):
         self.setWindowTitle("E-Bike Akkusimulation")
         self.setStyleSheet("background-color: white;")
     
+
+
     def get_data(self):
         self.inputDataProcessor = inputDataProcessor()
         self.inputDataProcessor.process(80, 0.5625, 0.6858, 1.5, 200, inputDataProcessor.EnvironmentToFrictionCoefficient(self.bike_type.currentText(), self.road_surface.currentText()))
@@ -125,6 +144,18 @@ class MainWindow(QMainWindow):
         self.min_lon = min(self.lon)
         self.max_lon = max(self.lon)
         self.update_battery()
+        self.update_general_data()
+
+
+
+    def update_general_data(self):
+        self.distance_total = self.inputDataProcessor.distanceTotal
+        self.speed_mean = self.inputDataProcessor.speedMean
+        self.power_max = self.inputDataProcessor.powerMax
+        self.time_total = self.inputDataProcessor.timeTotal
+        self.elevation_up = self.inputDataProcessor.totalElevationUp
+        self.elevation_down = self.inputDataProcessor.totalElevationDown
+        self.general_data_widget.update_labels(self.speed_mean, self.elevation_up, self.elevation_down, self.distance_total, self.power_max, self.time_total)
 
 
 
