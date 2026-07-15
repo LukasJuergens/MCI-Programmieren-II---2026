@@ -4,6 +4,7 @@ import metpy.calc as mpcalc
 from metpy.units import units
 from scipy.signal import savgol_filter
 from typing import Literal
+import osmnx as ox
 
 class inputDataProcessor:
     def __init__ (self) -> None:
@@ -34,7 +35,7 @@ class inputDataProcessor:
         self.ele = data['ele']
         self.temp = data['temperature']
 
-        self.timeTotal = len(self.time) # in sekunden
+        self.timeTotal = (self.time[len(self.time)-1] - self.time[0])
 
         # Platzhalter
         self.distances = None
@@ -53,6 +54,7 @@ class inputDataProcessor:
         """
         Berechnet folgende Werte zwischen den Messpunkten
         - Distanz
+        - Himmelsrichtung
         - Steigung und Höhenunterschied
         - Geschwindigkeit
         - Beschleunigung
@@ -77,6 +79,7 @@ class inputDataProcessor:
         """
         
         self._calcDistance()
+        self._calcCardinalDirection()
         self._calcIncline()
         self._calcSpeed()
         self._calcAcceleration()
@@ -92,16 +95,30 @@ class inputDataProcessor:
         R = 6371000 # Erdradius in m
         lat1 = np.radians(self.lat)
         lon1 = np.radians(self.lon)
-        lat2 = np.radians(self.lat.shift(-1))
-        lon2 = np.radians(self.lon.shift(-1))
-
+        lat2 = lat1.shift(-1)
+        lon2 = lon1.shift(-1)
+        
         dlat = lat2 - lat1
         dlon = lon2 - lon1
 
         # Haversine
         a = np.sin(dlat / 2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2)**2
-        self.distances = (2 * R * np.arctan2(np.sqrt(a), np.sqrt(1 - a)))#.dropna()
+        self.distances = (2 * R * np.arctan2(np.sqrt(a), np.sqrt(1 - a)))
         self.distanceTotal = self.distances.sum()
+
+    def _calcCardinalDirection(self) -> None:
+        """
+        Berechnet die Fahrtrichtung in Haupt und Nebenhimmelsrichtungen
+        """
+        lat1 = np.radians(self.lat)
+        lon1 = np.radians(self.lon)
+        lat2 = lat1.shift(-1)
+        lon2 = lon1.shift(-1)
+
+        bearings = ox.bearing.calculate_bearing(lat1, lon1, lat2, lon2)
+        self.cardinalDirections = (np.round(bearings/45)*45) % 360
+        directionMap = {0: "N", 45: "NE", 90: "E", 135: "SE", 180: "S", 225: "SW", 270: "W", 315: "NW"}
+        self.cardinalDirections = self.cardinalDirections.map(directionMap)
 
     def _calcIncline(self) -> None:
         """
@@ -112,7 +129,7 @@ class inputDataProcessor:
         
         self.eleDiff = self.ele.diff().shift(-1)
         self.eleDiff = self.eleDiff.clip(lower=-0.3)        
-        self.inclines = np.arctan(self.eleDiff/self.distances)#.dropna()
+        self.inclines = np.arctan(self.eleDiff/self.distances)
         
 
     def _calcSpeed(self) -> None:
@@ -135,7 +152,7 @@ class inputDataProcessor:
         
         dv = self.speeds.diff().shift(-1)
         # a = dv/dt
-        self.accelerations = (dv/1)#.dropna()
+        self.accelerations = (dv/1)
 
     @staticmethod
     def EnvironmentToFrictionCoefficient(
