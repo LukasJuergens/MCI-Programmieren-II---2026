@@ -49,6 +49,8 @@ class inputDataProcessor:
         self.powers = None
         self.powerMax = None
         self.currents = None
+        self.totalElevationUp = None
+        self.totalElevationDown = None
 
     def process(self, m:float=80, cwA:float=0.5625, d:float=27*0.0254, Km:float=1.5, PrekMax:float=200, cr:float = 0.005) -> None:
         """
@@ -128,7 +130,9 @@ class inputDataProcessor:
             raise ValueError("Execute calcDistance() first!")
         
         self.eleDiff = self.ele.diff().shift(-1)
-        self.eleDiff = self.eleDiff.clip(lower=-0.3)        
+        self.totalElevationUp = self.eleDiff.clip(0).sum()
+        self.totalElevationDown = self.eleDiff.clip(upper=0).sum() * (-1) 
+        self.eleDiff = self.eleDiff.clip(lower=-0.3) 
         self.inclines = np.arctan(self.eleDiff/self.distances)
         
 
