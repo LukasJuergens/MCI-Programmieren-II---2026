@@ -123,9 +123,7 @@ class MainWindow(QMainWindow):
 
     
     def init_UI(self):
-        self.setWindowTitle("E-Bike Akkusimulation")
-        self.setStyleSheet("background-color: white;")
-    
+        self.setWindowTitle("E-Bike Akkusimulation") 
 
 
     def get_data(self):

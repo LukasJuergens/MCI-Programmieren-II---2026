@@ -10,7 +10,8 @@ Die Anwendung ist eine **E-Bike-Akkusimulation**: Aus aufgezeichneten GPS-/Höhe
 
 **Voraussetzungen**
 
-- **Python** 3.14.3
+- Python 3.14.3
+- pip 26.1.2 
 - Internetzugang
 - Git
 
@@ -43,7 +44,7 @@ python main.py
 
 **In der Anwendung**
 
-1. verwendetes Fahrrad und Hauptstraßenbelag auswählen
+1. Verwendetes Fahrrad und Hauptstraßenbelag auswählen
 2. Akkutyp auswählen und Zellkapazität eingeben 
 3. Mit dem Slider können die Strecke und der Graph zugeschnitten werden
 4. Über dem Graph können die angezeigten Daten ausgewählt werden
