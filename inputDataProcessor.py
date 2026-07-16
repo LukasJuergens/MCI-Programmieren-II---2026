@@ -19,7 +19,7 @@ class inputDataProcessor:
         data = data.resample('1s').mean() 
         data = data.interpolate(method='linear') # füllt NaN Lücken
         
-        # FILTERN
+        # FILTERN - Savitzky–Golay filter
         windowLength = 31 # muss ungerade sein
         order = 2
         
@@ -86,7 +86,7 @@ class inputDataProcessor:
         self._calcSpeed()
         self._calcAcceleration()
         self._calcForce(m, cwA, PrekMax, cr)
-        self._calcTorque(d/2)
+        self._calcTorque(d)
         self._calcCurrent(Km)
         self._calcPower()
 
@@ -206,7 +206,7 @@ class inputDataProcessor:
         # speeds wird geclipt, damit keine division durch 0 entstehen kann
         self.forces = self.forces.clip(lower=-abs(PrekMax)/self.speeds.clip(lower=0.1))
         
-    def _calcTorque(self, r: float) -> None:
+    def _calcTorque(self, d: float) -> None:
         """
         Berechnet das Drehmoment, welches der Nabenmotor aufbringen muss
 
@@ -215,7 +215,7 @@ class inputDataProcessor:
         if self.forces is None:
             raise ValueError("Execute calcForce() first!")
         
-        self.torques = r * self.forces
+        self.torques = (d/2) * self.forces
 
     def _calcCurrent(self, Km: float) -> None:
         """
