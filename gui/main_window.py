@@ -101,21 +101,25 @@ class MainWindow(QMainWindow):
         general_data_layout.addWidget(self.address_widget)
         general_data_layout.addWidget(self.general_data_widget)
 
+        plot_layout = QVBoxLayout()
+        plot_layout.addWidget(self.plot_selection_combobox)
+        plot_layout.addWidget(self.plot_widget)
+
+        map_plot_layout = QHBoxLayout()
+        map_plot_layout.addWidget(self.map_widget)
+        map_plot_layout.addLayout(plot_layout)
+
         self.update_driven_time()
+
         layout.addLayout(environmentLayout)
         layout.addWidget(self.battery_selection_widget)
         layout.addLayout(general_data_layout)
         layout.addWidget(self.time_display)
-        layout.addWidget(self.map_widget)
         layout.addWidget(self.time_slider)
-        layout.addWidget(self.plot_selection_combobox)
-        layout.addWidget(self.plot_widget)
-
-              
+        layout.addLayout(map_plot_layout)   
 
         centralWidget.setLayout(layout)
         self.setCentralWidget(centralWidget)
-
 
     
     def init_UI(self):

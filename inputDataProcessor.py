@@ -130,9 +130,11 @@ class inputDataProcessor:
             raise ValueError("Execute calcDistance() first!")
         
         self.eleDiff = self.ele.diff().shift(-1)
+        
         self.totalElevationUp = self.eleDiff.clip(0).sum()
         self.totalElevationDown = self.eleDiff.clip(upper=0).sum() * (-1) 
-        self.eleDiff = self.eleDiff.clip(lower=-0.3) 
+
+        self.eleDiff = self.eleDiff.clip(lower=-0.3, upper=0.3)
         self.inclines = np.arctan(self.eleDiff/self.distances)
         
 
